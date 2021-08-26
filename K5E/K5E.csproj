@@ -1,0 +1,299 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+	<UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>K5E</AssemblyName>
+    <RootNamespace>K5E</RootNamespace>
+    <!-- Ignore package downgrade warnings -->
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
+    <SignAssembly>false</SignAssembly>
+    <StartupObject>K5E.App</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="App.xaml" />
+    <None Remove="AppIcon.ico" />
+    <None Remove="Content\ChangeLog.tt" />
+    <None Remove="Content\CSharp.xshd" />
+    <None Remove="Content\DefaultLayout.xml" />
+    <None Remove="Content\Images\AppIcon.ico" />
+    <None Remove="Content\Images\AppIcon.png" />
+    <None Remove="Content\Images\BlueBlocks1.png" />
+    <None Remove="Content\Images\BlueBlocks2.png" />
+    <None Remove="Content\Images\BlueBlocks4.png" />
+    <None Remove="Content\Images\BlueBlocks8.png" />
+    <None Remove="Content\Images\BlueBlocksArray.png" />
+    <None Remove="Content\Images\Cancel.png" />
+    <None Remove="Content\Images\Changed.png" />
+    <None Remove="Content\Images\Cog.png" />
+    <None Remove="Content\Images\Coin.png" />
+    <None Remove="Content\Images\CollectValues.png" />
+    <None Remove="Content\Images\Connect.png" />
+    <None Remove="Content\Images\Connected.png" />
+    <None Remove="Content\Images\Cpu.png" />
+    <None Remove="Content\Images\Curse.png" />
+    <None Remove="Content\Images\Decreased.png" />
+    <None Remove="Content\Images\Disconnected.png" />
+    <None Remove="Content\Images\DownArrows.png" />
+    <None Remove="Content\Images\Edit.png" />
+    <None Remove="Content\Images\ENotation.png" />
+    <None Remove="Content\Images\Equal.png" />
+    <None Remove="Content\Images\Glitch.png" />
+    <None Remove="Content\Images\GreaterThan.png" />
+    <None Remove="Content\Images\GreaterThanOrEqual.png" />
+    <None Remove="Content\Images\Heart.png" />
+    <None Remove="Content\Images\Home.png" />
+    <None Remove="Content\Images\Increased.png" />
+    <None Remove="Content\Images\Intersection.png" />
+    <None Remove="Content\Images\Invert.png" />
+    <None Remove="Content\Images\LeftArrow.png" />
+    <None Remove="Content\Images\LeftArrows.png" />
+    <None Remove="Content\Images\LessThan.png" />
+    <None Remove="Content\Images\LessThanOrEqual.png" />
+    <None Remove="Content\Images\LetterP.png" />
+    <None Remove="Content\Images\LetterS.png" />
+    <None Remove="Content\Images\LogicalAND.png" />
+    <None Remove="Content\Images\LogicalOR.png" />
+    <None Remove="Content\Images\Maximize.png" />
+    <None Remove="Content\Images\Merge.png" />
+    <None Remove="Content\Images\MinusX.png" />
+    <None Remove="Content\Images\MoveDown.png" />
+    <None Remove="Content\Images\MoveLeft.png" />
+    <None Remove="Content\Images\MoveRight.png" />
+    <None Remove="Content\Images\MoveUp.png" />
+    <None Remove="Content\Images\Negation.png" />
+    <None Remove="Content\Images\New.png" />
+    <None Remove="Content\Images\Next.png" />
+    <None Remove="Content\Images\NextScan.png" />
+    <None Remove="Content\Images\NotEqual.png" />
+    <None Remove="Content\Images\Open.png" />
+    <None Remove="Content\Images\OrangeBlocks1.png" />
+    <None Remove="Content\Images\OrangeBlocks2.png" />
+    <None Remove="Content\Images\OrangeBlocks4.png" />
+    <None Remove="Content\Images\OrangeBlocks8.png" />
+    <None Remove="Content\Images\PlusX.png" />
+    <None Remove="Content\Images\Previous.png" />
+    <None Remove="Content\Images\Properties.png" />
+    <None Remove="Content\Images\PurpleBlocks1.png" />
+    <None Remove="Content\Images\PurpleBlocks2.png" />
+    <None Remove="Content\Images\PurpleBlocks4.png" />
+    <None Remove="Content\Images\PurpleBlocks8.png" />
+    <None Remove="Content\Images\Redo.png" />
+    <None Remove="Content\Images\RightArrow.png" />
+    <None Remove="Content\Images\RightArrows.png" />
+    <None Remove="Content\Images\Save.png" />
+    <None Remove="Content\Images\Script.png" />
+    <None Remove="Content\Images\Search.png" />
+    <None Remove="Content\Images\SelectProcess.png" />
+    <None Remove="Content\Images\Squalr.png" />
+    <None Remove="Content\Images\SqualrDev.png" />
+    <None Remove="Content\Images\Stop.png" />
+    <None Remove="Content\Images\Unchanged.png" />
+    <None Remove="Content\Images\Undo.png" />
+    <None Remove="Content\Images\Union.png" />
+    <None Remove="Content\Images\UnknownValue.png" />
+    <None Remove="Content\Images\X.png" />
+    <None Remove="View\Controls\HexDecBox.xaml" />
+    <None Remove="View\DataTemplateError.xaml" />
+    <None Remove="View\MainWindow.xaml" />
+    <None Remove="View\Output.xaml" />
+    <None Remove="View\ProcessSelector.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Content\ChangeLog.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ChangeLog.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Content\CSharp.xshd" />
+    <EmbeddedResource Include="Content\DefaultLayout.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.1.2.30" />
+    <PackageReference Include="Dirkster.AvalonDock" Version="4.50.3" />
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.50.3" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.31" />
+    <PackageReference Include="MvvmLight" Version="5.4.1.1" />
+    <PackageReference Include="MvvmLightLibsStd10" Version="5.4.1.1" />
+    <PackageReference Include="System.CodeDom" Version="5.0.0" />
+    <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\K5E.Engine.Memory\K5E.Engine.Memory.csproj" />
+    <ProjectReference Include="..\K5E.Engine.Processes\K5E.Engine.Processes.csproj" />
+    <ProjectReference Include="..\K5E.Engine.Scanning\K5E.Engine.Scanning.csproj" />
+    <ProjectReference Include="..\K5E.Engine.Utils\K5E.Engine.Common.csproj" />
+    <ProjectReference Include="..\K5E.Engine\K5E.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="AppIcon.ico" />
+    <Resource Include="Content\Images\AppIcon.ico" />
+    <Resource Include="Content\Images\AppIcon.png" />
+    <Resource Include="Content\Images\BlueBlocks1.png" />
+    <Resource Include="Content\Images\BlueBlocks2.png" />
+    <Resource Include="Content\Images\BlueBlocks4.png" />
+    <Resource Include="Content\Images\BlueBlocks8.png" />
+    <Resource Include="Content\Images\BlueBlocksArray.png" />
+    <Resource Include="Content\Images\Cancel.png" />
+    <Resource Include="Content\Images\Changed.png" />
+    <Resource Include="Content\Images\Cog.png" />
+    <Resource Include="Content\Images\CollectValues.png" />
+    <Resource Include="Content\Images\Connect.png" />
+    <Resource Include="Content\Images\Connected.png" />
+    <Resource Include="Content\Images\Cpu.png" />
+    <Resource Include="Content\Images\Decreased.png" />
+    <Resource Include="Content\Images\Disconnected.png" />
+    <Resource Include="Content\Images\DownArrows.png" />
+    <Resource Include="Content\Images\Edit.png" />
+    <Resource Include="Content\Images\ENotation.png" />
+    <Resource Include="Content\Images\Equal.png" />
+    <Resource Include="Content\Images\GreaterThan.png" />
+    <Resource Include="Content\Images\GreaterThanOrEqual.png" />
+    <Resource Include="Content\Images\Home.png" />
+    <Resource Include="Content\Images\Increased.png" />
+    <Resource Include="Content\Images\Intersection.png" />
+    <Resource Include="Content\Images\Invert.png" />
+    <Resource Include="Content\Images\LeftArrow.png" />
+    <Resource Include="Content\Images\LeftArrows.png" />
+    <Resource Include="Content\Images\LessThan.png" />
+    <Resource Include="Content\Images\LessThanOrEqual.png" />
+    <Resource Include="Content\Images\LetterP.png" />
+    <Resource Include="Content\Images\LetterS.png" />
+    <Resource Include="Content\Images\LogicalAND.png" />
+    <Resource Include="Content\Images\LogicalOR.png" />
+    <Resource Include="Content\Images\Maximize.png" />
+    <Resource Include="Content\Images\Merge.png" />
+    <Resource Include="Content\Images\MinusX.png" />
+    <Resource Include="Content\Images\MoveDown.png" />
+    <Resource Include="Content\Images\MoveLeft.png" />
+    <Resource Include="Content\Images\MoveRight.png" />
+    <Resource Include="Content\Images\MoveUp.png" />
+    <Resource Include="Content\Images\Negation.png" />
+    <Resource Include="Content\Images\New.png" />
+    <Resource Include="Content\Images\NextScan.png" />
+    <Resource Include="Content\Images\NotEqual.png" />
+    <Resource Include="Content\Images\Open.png" />
+    <Resource Include="Content\Images\OrangeBlocks1.png" />
+    <Resource Include="Content\Images\OrangeBlocks2.png" />
+    <Resource Include="Content\Images\OrangeBlocks4.png" />
+    <Resource Include="Content\Images\OrangeBlocks8.png" />
+    <Resource Include="Content\Images\PlusX.png" />
+    <Resource Include="Content\Images\Properties.png" />
+    <Resource Include="Content\Images\PurpleBlocks1.png" />
+    <Resource Include="Content\Images\PurpleBlocks2.png" />
+    <Resource Include="Content\Images\PurpleBlocks4.png" />
+    <Resource Include="Content\Images\PurpleBlocks8.png" />
+    <Resource Include="Content\Images\Redo.png" />
+    <Resource Include="Content\Images\RightArrow.png" />
+    <Resource Include="Content\Images\RightArrows.png" />
+    <Resource Include="Content\Images\Save.png" />
+    <Resource Include="Content\Images\Script.png" />
+    <Resource Include="Content\Images\Search.png" />
+    <Resource Include="Content\Images\SelectProcess.png" />
+    <Resource Include="Content\Images\Stop.png" />
+    <Resource Include="Content\Images\Unchanged.png" />
+    <Resource Include="Content\Images\Undo.png" />
+    <Resource Include="Content\Images\Union.png" />
+    <Resource Include="Content\Images\UnknownValue.png" />
+    <Resource Include="Content\Images\X.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Update="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </ApplicationDefinition>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Content\ChangeLog.cs">
+      <DependentUpon>ChangeLog.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="View\Controls\HexDecBox.xaml.cs">
+      <DependentUpon>HexDecBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="View\Output.xaml.cs">
+      <DependentUpon>Output.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="View\Controls\HexDecBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\DataTemplateError.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\MainWindow.xaml">
+      <Generator>XamlIntelliSenseFileGenerator</Generator>
+    </Page>
+    <Page Update="View\Output.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\ProcessSelector.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\HeapVisualizer.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="View\Styles\AvalonDockOverrides\AnchorablePaneTitle.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Styles\Button.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\CheckBox.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\ComboBox.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\ContextMenu.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\DarkBrushes.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\AvalonDockOverrides\AnchorablePaneControl.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Styles\GroupBox.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\MenuItem.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\ScrollViewer.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\Separator.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\Submenu.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\Styles\TextBoxPlaceHolder.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+</Project>

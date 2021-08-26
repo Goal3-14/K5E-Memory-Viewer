@@ -3,21 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28621.142
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Squalr", "Squalr", "{B9D21C46-8963-4377-AEAD-A891F3D618A9}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "K5E", "K5E", "{B9D21C46-8963-4377-AEAD-A891F3D618A9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engine", "Engine", "{F853488B-5AC3-464C-86D7-32B33051E885}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Squalr.Engine.Memory", "Squalr.Engine.Memory\Squalr.Engine.Memory.csproj", "{77E64E71-8E26-4311-9C10-61D4CAFD4FEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E.Engine.Memory", "K5E.Engine.Memory\K5E.Engine.Memory.csproj", "{77E64E71-8E26-4311-9C10-61D4CAFD4FEF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Squalr.Engine", "Squalr.Engine\Squalr.Engine.csproj", "{0B78BEBF-D43F-431C-8A5F-9734C6FDA1B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E.Engine", "K5E.Engine\K5E.Engine.csproj", "{0B78BEBF-D43F-431C-8A5F-9734C6FDA1B3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Squalr.Engine.Scanning", "Squalr.Engine.Scanning\Squalr.Engine.Scanning.csproj", "{47FAFF79-44F7-4505-91CA-A2BE28915EE2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E.Engine.Scanning", "K5E.Engine.Scanning\K5E.Engine.Scanning.csproj", "{47FAFF79-44F7-4505-91CA-A2BE28915EE2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Squalr.Engine.Processes", "Squalr.Engine.Processes\Squalr.Engine.Processes.csproj", "{AD766F54-5CED-433C-B654-3013A1BAF699}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E.Engine.Processes", "K5E.Engine.Processes\K5E.Engine.Processes.csproj", "{AD766F54-5CED-433C-B654-3013A1BAF699}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Squalr.Engine.Common", "Squalr.Engine.Utils\Squalr.Engine.Common.csproj", "{323AE452-B9CC-4F37-87B7-B75875318944}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E.Engine.Common", "K5E.Engine.Utils\K5E.Engine.Common.csproj", "{323AE452-B9CC-4F37-87B7-B75875318944}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E", "Squalr\K5E.csproj", "{C558912D-FC6A-432D-BE56-6AD42ACEF934}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "K5E", "K5E\K5E.csproj", "{C558912D-FC6A-432D-BE56-6AD42ACEF934}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
