@@ -31,7 +31,9 @@
         static readonly Int32 HeapTableEntrySize = 20;
         static readonly Int32 HeapBlockSize = 28;
 
-        static readonly UInt32 BikeAddress = 0x81174BC0;
+        static readonly UInt32 MountPointerAddress = 0x803428F8;
+        static readonly UInt32 MountOffset = 0x908;
+        static readonly Int32 BikeSize = 3104;
 
         static readonly Int32 HeapImageWidth = 65536;
         static readonly Int32 HeapImageHeight = 1;
@@ -98,6 +100,16 @@
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
+                            UInt32 mountPointer = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
+                                SessionManager.Session.OpenedProcess,
+                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, MountPointerAddress, EmulatorType.Dolphin),
+                                out _)) + MountOffset;
+
+                            mountPointer = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
+                                SessionManager.Session.OpenedProcess,
+                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, mountPointer, EmulatorType.Dolphin),
+                                out _));
+
                             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
                             {
                                 Array.Clear(this.HeapBitmapBuffers[heapIndex], 0, this.HeapBitmapBuffers[heapIndex].Length);
@@ -127,6 +139,12 @@
                                 UInt32 totalBlocks = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 8));
                                 UInt32 usedBlocks = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 12));
                                 UInt32 blockBaseAddress = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 16));
+
+                                // Color the bike memory as flashing red. Will be overwritten if something is allocated there.
+                                if (mountPointer > HeapAddresses[heapIndex] && mountPointer < HeapAddresses[heapIndex + 1])
+                                {
+                                    this.ColorBikeMemory(mountPointer, heapIndex, Color.FromRgb((Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0, 0));
+                                }
 
                                 for (int blockIndex = 0; blockIndex < usedBlocks; blockIndex++)
                                 {
@@ -176,12 +194,7 @@
                                         case 0x8002BE20: color = Colors.IndianRed; break;   // Object definition
                                         case 0x8002D91C: color = Colors.DarkRed; break;     // Object instance
                                         case 0xFFFF00FF: color = Colors.HotPink; break;     // Intersect point / savegame
-                                        default: color = Colors.Brown; break;           
-                                    }
-
-                                    if (address == BikeAddress)
-                                    {
-                                        color = Colors.HotPink;
+                                        default: color = Colors.Brown; break;
                                     }
 
                                     Int32 pixelStart = (Int32)((double)offset * (double)HeapImageWidth / (double)heapSize);
@@ -197,6 +210,12 @@
                                         this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] = color.B;
                                         this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] = color.G;
                                         this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] = color.R;
+                                    }
+
+                                    // Recolor the memory as flashing green if it is being overlapped
+                                    if (address <= (mountPointer + BikeSize) && mountPointer <= (address + size))
+                                    {
+                                        this.ColorBikeMemory(mountPointer, heapIndex, Color.FromRgb(0, (Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0));
                                     }
                                 }
 
@@ -217,6 +236,28 @@
                     await Task.Delay(50);
                 }
             });
+        }
+
+        private void ColorBikeMemory(UInt32 mountPointer, Int32 heapIndex, Color color)
+        {
+            Int32 heapSize = (Int32)(HeapAddresses[heapIndex + 1] - HeapAddresses[heapIndex]);
+            Int32 bytesPerPixel = this.HeapBitmaps[heapIndex].Format.BitsPerPixel / 8;
+
+            Int32 bikeOffset = (Int32)(mountPointer - HeapAddresses[heapIndex]);
+            Int32 bikeStart = (Int32)((double)bikeOffset * (double)HeapImageWidth / (double)heapSize);
+            Int32 bikeEnd = (Int32)((double)(bikeOffset + BikeSize) * (double)HeapImageWidth / (double)heapSize);
+
+            for (Int32 pixelIndex = bikeStart; pixelIndex < bikeEnd; pixelIndex++)
+            {
+                if (pixelIndex >= HeapImageWidth)
+                {
+                    throw new Exception("Address out of bitmap range!");
+                }
+
+                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] = color.B;
+                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] = color.G;
+                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] = color.R;
+            }
         }
     }
     //// End class
