@@ -237,6 +237,12 @@
     <Page Update="View\DataTemplateError.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="View\DTMEditor.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
+    <Page Update="View\FlagRecorder.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </Page>
     <Page Update="View\MainWindow.xaml">
       <Generator>XamlIntelliSenseFileGenerator</Generator>
     </Page>

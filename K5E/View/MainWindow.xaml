@@ -17,7 +17,7 @@
     x:Name="K5EWindow"
     Title="K5E"
     Width="1280"
-    Height="840"
+    Height="960"
     x:ClassModifier="public"
     AllowsTransparency="False"
     DataContext="{Binding MainViewModel, Source={StaticResource ViewModelLocator}}"
@@ -191,9 +191,27 @@
                             IsChecked="{Binding ProcessSelectorViewModel.IsVisible, Mode=TwoWay}"
                             Style="{Binding .}"/>
                         <shell:MenuItem
+                            Header="DTM Editor"
+                            IsCheckable="True"
+                            IsChecked="{Binding DTMEditorViewModel.IsVisible, Mode=TwoWay}"
+                            Style="{Binding .}"
+                             />
+                        <shell:MenuItem
+                            Header="Property Viewer"
+                            IsCheckable="True"
+                            IsChecked="{Binding PropertyViewerViewModel.IsVisible, Mode=TwoWay}"
+                            Style="{Binding .}"
+                             />
+                        <shell:MenuItem
                             Header="Heap Visualizer"
                             IsCheckable="True"
                             IsChecked="{Binding HeapVisualizerViewModel.IsVisible, Mode=TwoWay}"
+                            Style="{Binding .}"
+                             />
+                        <shell:MenuItem
+                            Header="Flag Recorder"
+                            IsCheckable="True"
+                            IsChecked="{Binding FlagRecorderViewModel.IsVisible, Mode=TwoWay}"
                             Style="{Binding .}"
                              />
                         <shell:MenuItem
@@ -266,12 +284,30 @@
                                 <view:DataTemplateError />
                             </shell:DataTemplate>
                         </view:ViewTemplateSelector.DataTemplateErrorViewTemplate>
+                        <!--  DTM Editor  -->
+                        <view:ViewTemplateSelector.DTMEditorViewTemplate>
+                            <shell:DataTemplate>
+                                <view:DTMEditor />
+                            </shell:DataTemplate>
+                        </view:ViewTemplateSelector.DTMEditorViewTemplate>
+                        <!--  Property Viewer  -->
+                        <view:ViewTemplateSelector.PropertyViewerViewTemplate>
+                            <shell:DataTemplate>
+                                <view:PropertyViewer />
+                            </shell:DataTemplate>
+                        </view:ViewTemplateSelector.PropertyViewerViewTemplate>
                         <!--  Heap Visualizer  -->
                         <view:ViewTemplateSelector.HeapVisualizerViewTemplate>
                             <shell:DataTemplate>
                                 <view:HeapVisualizer />
                             </shell:DataTemplate>
                         </view:ViewTemplateSelector.HeapVisualizerViewTemplate>
+                        <!--  Flag Recorder  -->
+                        <view:ViewTemplateSelector.FlagRecorderViewTemplate>
+                            <shell:DataTemplate>
+                                <view:FlagRecorder />
+                            </shell:DataTemplate>
+                        </view:ViewTemplateSelector.FlagRecorderViewTemplate>
                         <!--  Process Selector  -->
                         <view:ViewTemplateSelector.ProcessSelectorViewTemplate>
                             <shell:DataTemplate>

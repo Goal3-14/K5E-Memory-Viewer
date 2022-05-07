@@ -1,8 +1,11 @@
 ﻿namespace K5E.View
 {
+    using K5E.Source.DTMEditor;
+    using K5E.Source.FlagRecorder;
     using K5E.Source.HeapVisualizer;
     using K5E.Source.Output;
     using K5E.Source.ProcessSelector;
+    using K5E.Source.PropertyViewer;
     using System;
     using System.Collections.Generic;
     using System.Windows;
@@ -24,9 +27,24 @@
         private DataTemplate outputViewTemplate;
 
         /// <summary>
+        /// The template for the Property Viewer.
+        /// </summary>
+        private DataTemplate propertyViewerViewTemplate;
+
+        /// <summary>
         /// The template for the Heap Visualizer.
         /// </summary>
         private DataTemplate heapVisualizerViewTemplate;
+
+        /// <summary>
+        /// The template for the Flag Recorder
+        /// </summary>
+        private DataTemplate flagRecorderViewTemplate;
+
+        /// <summary>
+        /// The template for the DTM Editor.
+        /// </summary>
+        private DataTemplate dtmEditorViewTemplate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ViewTemplateSelector" /> class.
@@ -107,7 +125,24 @@
         }
 
         /// <summary>
-        /// Gets or sets the template for the Snapshot Manager.
+        /// Gets or sets the template for the Property Viewer.
+        /// </summary>
+        public DataTemplate PropertyViewerViewTemplate
+        {
+            get
+            {
+                return this.propertyViewerViewTemplate;
+            }
+
+            set
+            {
+                this.propertyViewerViewTemplate = value;
+                this.DataTemplates[typeof(PropertyViewerViewModel)] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the template for the Heap Visualizer.
         /// </summary>
         public DataTemplate HeapVisualizerViewTemplate
         {
@@ -120,6 +155,40 @@
             {
                 this.heapVisualizerViewTemplate = value;
                 this.DataTemplates[typeof(HeapVisualizerViewModel)] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the template for the Flag Recorder
+        /// </summary>
+        public DataTemplate FlagRecorderViewTemplate
+        {
+            get
+            {
+                return this.flagRecorderViewTemplate;
+            }
+
+            set
+            {
+                this.flagRecorderViewTemplate = value;
+                this.DataTemplates[typeof(FlagRecorderViewModel)] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the template for the DTM Editor.
+        /// </summary>
+        public DataTemplate DTMEditorViewTemplate
+        {
+            get
+            {
+                return this.dtmEditorViewTemplate;
+            }
+
+            set
+            {
+                this.dtmEditorViewTemplate = value;
+                this.DataTemplates[typeof(DTMEditorViewModel)] = value;
             }
         }
     }

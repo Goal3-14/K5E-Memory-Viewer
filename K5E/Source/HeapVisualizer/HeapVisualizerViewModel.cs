@@ -14,17 +14,10 @@
     using System.Windows.Media.Imaging;
 
     /// <summary>
-    /// View model for the Manual Scanner.
+    /// View model for the Heap Visualizer.
     /// </summary>
     public class HeapVisualizerViewModel : ToolViewModel
     {
-        /// <summary>
-        /// Singleton instance of the <see cref="HeapVisualizerViewModel" /> class.
-        /// </summary>
-        private static Lazy<HeapVisualizerViewModel> heapVisualizerViewModelInstance = new Lazy<HeapVisualizerViewModel>(
-                () => { return new HeapVisualizerViewModel(); },
-                LazyThreadSafetyMode.ExecutionAndPublication);
-
         static readonly List<UInt32> HeapAddresses = new List<UInt32> { 0x80526020, 0x8112FF80, 0x812EFFA0, 0x8138E1E0, 0x81800000 /* End address */ };
         static readonly Int32 HeapCount = 4;
         static readonly UInt32 HeapTableAddress = 0x80340698;
@@ -38,6 +31,11 @@
         static readonly Int32 HeapImageWidth = 65536;
         static readonly Int32 HeapImageHeight = 1;
         static readonly Int32 DPI = 72;
+
+        /// <summary>
+        /// Singleton instance of the <see cref="HeapVisualizerViewModel" /> class.
+        /// </summary>
+        private static HeapVisualizerViewModel heapVisualizerViewModelInstance = new HeapVisualizerViewModel();
 
         /// <summary>
         /// Prevents a default instance of the <see cref="HeapVisualizerViewModel" /> class from being created.
@@ -65,7 +63,14 @@
                 Logger.Log(LogLevel.Error, "Error initializing heap bitmap", ex);
             }
 
-            this.RunUpdateLoop();
+            Application.Current.Exit += this.OnAppExit;
+
+            // this.RunUpdateLoop();
+        }
+
+        private void OnAppExit(object sender, ExitEventArgs e)
+        {
+            this.CanUpdate = false;
         }
 
         /// <summary>
@@ -79,12 +84,17 @@
         public List<Byte[]> HeapBitmapBuffers { get; private set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the heap visualizer update loop can run.
+        /// </summary>
+        private bool CanUpdate { get; set; }
+
+        /// <summary>
         /// Gets a singleton instance of the <see cref="HeapVisualizerViewModel"/> class.
         /// </summary>
         /// <returns>A singleton instance of the class.</returns>
         public static HeapVisualizerViewModel GetInstance()
         {
-            return HeapVisualizerViewModel.heapVisualizerViewModelInstance.Value;
+            return HeapVisualizerViewModel.heapVisualizerViewModelInstance;
         }
 
         /// <summary>
@@ -92,30 +102,40 @@
         /// </summary>
         private void RunUpdateLoop()
         {
+            this.CanUpdate = true;
+
             Task.Run(async () =>
             {
-                while (true)
+                while (this.CanUpdate)
                 {
                     try
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            UInt32 mountPointer = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
+                            bool success = false;
+                            UInt32 mountPointer = MemoryReader.Instance.Read<UInt32>(
                                 SessionManager.Session.OpenedProcess,
                                 MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, MountPointerAddress, EmulatorType.Dolphin),
-                                out _)) + MountOffset;
+                                out success);
 
-                            mountPointer = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
-                                SessionManager.Session.OpenedProcess,
-                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, mountPointer, EmulatorType.Dolphin),
-                                out _));
+                            if (success)
+                            {
+                                mountPointer = BinaryPrimitives.ReverseEndianness(mountPointer) + MountOffset;
+                                mountPointer = MemoryReader.Instance.Read<UInt32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, mountPointer, EmulatorType.Dolphin),
+                                    out success);
+
+                                if (success)
+                                {
+                                    mountPointer = BinaryPrimitives.ReverseEndianness(mountPointer);
+                                }
+                            }
 
                             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
                             {
                                 Array.Clear(this.HeapBitmapBuffers[heapIndex], 0, this.HeapBitmapBuffers[heapIndex].Length);
                             }
-
-                            bool success = false;
 
                             Byte[] heapStruct = MemoryReader.Instance.ReadBytes(
                                 SessionManager.Session.OpenedProcess,

@@ -37,14 +37,7 @@
             }
 
             Logger.Log(LogLevel.Info, "K5E started");
-
-            HeapVisualizerViewModel.GetInstance();
         }
-
-        /// <summary>
-        /// Gets the command to open the change log.
-        /// </summary>
-        public ICommand DisplayChangeLogCommand { get; private set; }
 
         /// <summary>
         /// Default layout file for browsing cheats.

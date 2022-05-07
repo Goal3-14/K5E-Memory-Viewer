@@ -7,6 +7,9 @@
     using K5E.Source.Output;
     using K5E.Source.ProcessSelector;
     using K5E.Source.Tasks;
+    using K5E.Source.DTMEditor;
+    using K5E.Source.PropertyViewer;
+    using K5E.Source.FlagRecorder;
 
     /// <summary>
     /// This class contains static references to all the view models in the
@@ -76,14 +79,48 @@
             }
         }
 
+
         /// <summary>
-        /// Gets the Manual Scanner view model.
+        /// Gets the Property Editor view model.
+        /// </summary>
+        public PropertyViewerViewModel PropertyViewerViewModel
+        {
+            get
+            {
+                return PropertyViewerViewModel.GetInstance();
+            }
+        }
+
+        /// <summary>
+        /// Gets the DTM Editor view model.
+        /// </summary>
+        public DTMEditorViewModel DTMEditorViewModel
+        {
+            get
+            {
+                return DTMEditorViewModel.GetInstance();
+            }
+        }
+
+        /// <summary>
+        /// Gets the Heap Visualizer view model.
         /// </summary>
         public HeapVisualizerViewModel HeapVisualizerViewModel
         {
             get
             {
                 return HeapVisualizerViewModel.GetInstance();
+            }
+        }
+
+        /// <summary>
+        /// Gets the Flag Recorder view model.
+        /// </summary>
+        public FlagRecorderViewModel FlagRecorderViewModel
+        {
+            get
+            {
+                return FlagRecorderViewModel.GetInstance();
             }
         }
 

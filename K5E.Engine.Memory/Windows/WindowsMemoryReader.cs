@@ -118,6 +118,12 @@
         public T Read<T>(Process process, UInt64 address, out Boolean success)
         {
             Byte[] byteArray = this.ReadBytes(process, address, Conversions.SizeOf(typeof(T)), out success);
+
+            if (!success)
+            {
+                return default(T);
+            }
+
             return Conversions.BytesToObject<T>(byteArray);
         }
 
