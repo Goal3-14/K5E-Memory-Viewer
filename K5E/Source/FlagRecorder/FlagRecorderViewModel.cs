@@ -8,6 +8,7 @@
     using System.Buffers.Binary;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using System.Windows;
 
@@ -50,6 +51,7 @@
         bool CanUpdate = false;
 
         Byte[] GameBits;
+        Byte[] PuzzleBytes;
 
         /// <summary>
         /// Blacklist for gamebits that change extremely frequently (ie timers)
@@ -73,6 +75,9 @@
             1704, 1705, 1706, 1707
         };
 
+        string EventLog = Path.Join(AppDomain.CurrentDomain.BaseDirectory, string.Format("EventLog_{0}.csv", StaticRandom.Next(0, 255)));
+        string PuzzleLog = Path.Join(AppDomain.CurrentDomain.BaseDirectory, string.Format("PuzzleLog_{0}.csv", StaticRandom.Next(0, 255)));
+
         /// <summary>
         /// Begin the update loop for visualizing the heap.
         /// </summary>
@@ -80,11 +85,14 @@
         {
             this.CanUpdate = true;
 
-            string eventLog = Path.Join(AppDomain.CurrentDomain.BaseDirectory, string.Format("EventLog_{0}.csv", StaticRandom.Next(0, 255)));
-
-            if (!File.Exists(eventLog))
+            if (!File.Exists(EventLog))
             {
-                File.Create(eventLog);
+                File.Create(EventLog);
+            }
+
+            if (!File.Exists(PuzzleLog))
+            {
+                File.Create(PuzzleLog);
             }
 
             Task.Run(async () =>
@@ -93,51 +101,12 @@
                 {
                     try
                     {
-                        using (StreamWriter eventWriter = File.AppendText(eventLog))
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                bool success = false;
-                                Byte[] gameBits = MemoryReader.Instance.ReadBytes(
-                                    SessionManager.Session.OpenedProcess,
-                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803A32A8, EmulatorType.Dolphin),
-                                    1772,
-                                    out success);
-
-                                if (!success)
-                                {
-                                    return;
-                                }
-
-                                UInt32 frame = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
-                                    SessionManager.Session.OpenedProcess,
-                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803DCB1C, EmulatorType.Dolphin),
-                                    out success));
-
-                                if (success && gameBits != null)
-                                {
-                                    bool hasDiff = false;
-
-                                    for (int index = 0; index < gameBits.Length; index++)
-                                    {
-                                        if (!BlackList.Contains(index) && (this.GameBits == null || gameBits[index] != this.GameBits[index]))
-                                        {
-                                            // Difference detected (or first run). Fire an event with the value / frame for each changed gamebit.
-                                            eventWriter.WriteLine(String.Format("{0},{1},{2}", index, gameBits[index], frame));
-                                            hasDiff = true;
-                                        }
-                                    }
-
-                                    if (hasDiff)
-                                    {
-                                        eventWriter.Flush();
-                                    }
-
-                                    this.GameBits = gameBits;
-                                }
-                            });
-                        }
-                        await Task.Delay(50);
+                            // this.RecordGameFlagChanges();
+                            this.RecordPuzzleChanges();
+                        });
+                        await Task.Delay(1);
                     }
                     catch (Exception ex)
                     {
@@ -145,6 +114,75 @@
                     }
                 }
             });
+        }
+
+        void RecordGameFlagChanges()
+        {
+            using (StreamWriter eventWriter = File.AppendText(EventLog))
+            {
+                bool success = false;
+                Byte[] gameBits = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803A32A8, EmulatorType.Dolphin),
+                    1772,
+                    out success);
+
+                if (!success)
+                {
+                    return;
+                }
+
+                UInt32 frame = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803DCB1C, EmulatorType.Dolphin),
+                    out success));
+
+                if (success && gameBits != null)
+                {
+                    bool hasDiff = false;
+
+                    for (int index = 0; index < gameBits.Length; index++)
+                    {
+                        if (!BlackList.Contains(index) && (this.GameBits == null || gameBits[index] != this.GameBits[index]))
+                        {
+                            // Difference detected (or first run). Fire an event with the value / frame for each changed gamebit.
+                            eventWriter.WriteLine(String.Format("{0},{1},{2}", index, gameBits[index], frame));
+                            hasDiff = true;
+                        }
+                    }
+
+                    if (hasDiff)
+                    {
+                        eventWriter.Flush();
+                    }
+
+                    this.GameBits = gameBits;
+                }
+            }
+        }
+
+        void RecordPuzzleChanges()
+        {
+            using (StreamWriter puzzleWriter = File.AppendText(PuzzleLog))
+            {
+                bool success = false;
+                Byte[] puzzleBytes = MemoryReader.Instance.ReadBytes(
+                    SessionManager.Session.OpenedProcess,
+                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x8032A489, EmulatorType.Dolphin), 9 * 2, out success);
+
+                if (success && puzzleBytes != null)
+                {
+                    if (puzzleBytes == null || this.PuzzleBytes == null || !puzzleBytes.SequenceEqual(this.PuzzleBytes))
+                    {
+                        puzzleWriter.WriteLine(String.Format("{0},{1},{2},{3},{4},{5}", puzzleBytes[0], puzzleBytes[2], puzzleBytes[4],
+                            puzzleBytes[6], puzzleBytes[8], puzzleBytes[10],
+                            puzzleBytes[12], puzzleBytes[14], puzzleBytes[16]));
+                        puzzleWriter.Flush();
+
+                        this.PuzzleBytes = puzzleBytes;
+                    }
+                }
+            }
         }
     }
     //// End class
