@@ -22,9 +22,97 @@
             <RowDefinition />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <Image Grid.Row="0" x:Name="heap0Viz" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[0]}" Stretch="Fill" />
-        <Image Grid.Row="1" x:Name="heap1Viz" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[1]}" Stretch="Fill" />
-        <Image Grid.Row="2" x:Name="heap2Viz" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[2]}" Stretch="Fill" />
-        <Image Grid.Row="3" x:Name="heap3Viz" Margin="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Source="{Binding Path=HeapBitmaps[3]}" Stretch="Fill" />
+
+        <Grid Grid.Row="0">
+            <Image HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill" Margin="2" Source="{Binding Path=HeapViews[0].HeapBitmap}" />
+            <StackPanel Background="#7F000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" Text="{Binding Path=HeapViews[0].HeapHash}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[0].HeapUsedBlocks}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[0].HeapTotalBlocks}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[0].HeapUsedSize}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[0].HeapTotalSize}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Image HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill" Margin="2" Source="{Binding Path=HeapViews[1].HeapBitmap}" />
+            <StackPanel Background="#7F000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock>
+                        <TextBlock.Inlines>
+                            <Run Foreground="White" FontWeight="Bold" Text="{Binding Path=HeapViews[1].HeapHash}" />
+                        </TextBlock.Inlines>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock>
+                        <TextBlock.Inlines>
+                            <Run Foreground="White" FontWeight="Bold" Text="{Binding Path=HeapViews[1].HeapMountBlockStart, StringFormat={}0x{0:X8}}" />
+                        </TextBlock.Inlines>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock>
+                        <TextBlock.Inlines>
+                            <Run Foreground="White" FontWeight="Bold" Text="{Binding Path=HeapViews[1].HeapMountBlockEnd, StringFormat={}0x{0:X8}}" />
+                        </TextBlock.Inlines>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock>
+                        <TextBlock.Inlines>
+                            <Run FontWeight="Bold" Foreground="{Binding Path=HeapViews[1].HeapMountStatusColor}" Text="{Binding Path=HeapViews[1].HeapMountStatus}" />
+                        </TextBlock.Inlines>
+                    </TextBlock> 
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[1].HeapUsedBlocks}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[1].HeapTotalBlocks}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[1].HeapUsedSize}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[1].HeapTotalSize}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="2">
+            <Image HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill" Margin="2" Source="{Binding Path=HeapViews[2].HeapBitmap}" />
+            <StackPanel Background="#7F000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" Text="{Binding Path=HeapViews[2].HeapHash}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[2].HeapUsedBlocks}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[2].HeapTotalBlocks}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[2].HeapUsedSize}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[2].HeapTotalSize}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="3">
+            <Image HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill" Margin="2" Source="{Binding Path=HeapViews[3].HeapBitmap}" />
+            <StackPanel Background="#7F000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" Text="{Binding Path=HeapViews[3].HeapHash}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[3].HeapUsedBlocks}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[3].HeapTotalBlocks}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[3].HeapUsedSize}" />
+                    <TextBlock Foreground="White" Text=" / " />
+                    <TextBlock Foreground="White" Text="{Binding Path=HeapViews[3].HeapTotalSize}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

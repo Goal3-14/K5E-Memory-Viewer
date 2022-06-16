@@ -96,7 +96,7 @@
                         Grid.Column="2"
                         VerticalAlignment="Center"
                         Foreground="{StaticResource K5EColorWhite}"
-                        Text="K5E" />
+                        Text="K5E (v2)" />
                 </shell:Grid>
                 <shell:Menu
                     Grid.Column="1"
@@ -161,16 +161,6 @@
                             CommandParameter="{Binding ElementName=K5EWindow}"
                             Style="{Binding .}"
                             Header="Exit K5E"
-                             />
-                    </shell:MenuItem>
-
-                    <!--  Edit Header  -->
-                    <shell:MenuItem DataContext="{Binding Source={StaticResource ViewModelLocator}}" Header="Edit">
-                        <shell:MenuItem
-                            Header="Settings"
-                            IsCheckable="True"
-                            IsChecked="{Binding SettingsViewModel.IsVisible, Mode=TwoWay}"
-                            Style="{Binding .}"
                              />
                     </shell:MenuItem>
 

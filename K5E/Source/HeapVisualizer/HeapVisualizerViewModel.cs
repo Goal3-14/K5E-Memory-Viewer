@@ -1,13 +1,14 @@
 ﻿namespace K5E.Source.HeapVisualizer
 {
     using K5E.Engine.Common;
+    using K5E.Engine.Common.DataStructures;
     using K5E.Engine.Common.Logging;
     using K5E.Engine.Memory;
     using K5E.Source.Docking;
     using System;
     using System.Buffers.Binary;
     using System.Collections.Generic;
-    using System.Threading;
+    using System.Security.Cryptography;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Media;
@@ -21,14 +22,12 @@
         static readonly List<UInt32> HeapAddresses = new List<UInt32> { 0x80526020, 0x8112FF80, 0x812EFFA0, 0x8138E1E0, 0x81800000 /* End address */ };
         static readonly Int32 HeapCount = 4;
         static readonly UInt32 HeapTableAddress = 0x80340698;
-        static readonly Int32 HeapTableEntrySize = 20;
-        static readonly Int32 HeapBlockSize = 28;
 
         static readonly UInt32 MountPointerAddress = 0x803428F8;
         static readonly UInt32 MountOffset = 0x908;
         static readonly Int32 BikeSize = 3104;
 
-        static readonly Int32 HeapImageWidth = 65536;
+        static readonly Int32 HeapImageWidth = 4096;
         static readonly Int32 HeapImageHeight = 1;
         static readonly Int32 DPI = 72;
 
@@ -44,18 +43,15 @@
         {
             DockingViewModel.GetInstance().RegisterViewModel(this);
 
-            this.HeapBitmaps = new List<WriteableBitmap>();
-            this.HeapBitmapBuffers = new List<Byte[]>();
+            this.HeapViews = new FullyObservableCollection<HeapViewInfo>();
 
             try
             {
                 for (Int32 index = 0; index < HeapCount; index++)
                 {
-                    WriteableBitmap HeapBitmap = new WriteableBitmap(HeapImageWidth, HeapImageHeight, DPI, DPI, PixelFormats.Bgr24, null);
-                    Byte[] HeapBuffer = new Byte[HeapBitmap.BackBufferStride * HeapImageHeight];
-
-                    this.HeapBitmaps.Add(HeapBitmap);
-                    this.HeapBitmapBuffers.Add(HeapBuffer);
+                    this.HeapViews.Add(new HeapViewInfo());
+                    this.HeapViews[index].HeapBitmap = new WriteableBitmap(HeapImageWidth, HeapImageHeight, DPI, DPI, PixelFormats.Bgr24, null);
+                    this.HeapViews[index].HeapBitmapBuffer = new Byte[this.HeapViews[index].HeapBitmap.BackBufferStride * HeapImageHeight];
                 }
             }
             catch (Exception ex)
@@ -65,7 +61,7 @@
 
             Application.Current.Exit += this.OnAppExit;
 
-            // this.RunUpdateLoop();
+            this.RunUpdateLoop();
         }
 
         private void OnAppExit(object sender, ExitEventArgs e)
@@ -76,17 +72,14 @@
         /// <summary>
         /// Gets the list of visualization bitmaps.
         /// </summary>
-        public List<WriteableBitmap> HeapBitmaps { get; private set; }
-
-        /// <summary>
-        /// Gets the list of buffers used to update the visualization bitmaps.
-        /// </summary>
-        public List<Byte[]> HeapBitmapBuffers { get; private set; }
+        public FullyObservableCollection<HeapViewInfo> HeapViews { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the heap visualizer update loop can run.
         /// </summary>
         private bool CanUpdate { get; set; }
+
+        private MD5 md5 = MD5.Create();
 
         /// <summary>
         /// Gets a singleton instance of the <see cref="HeapVisualizerViewModel"/> class.
@@ -134,13 +127,14 @@
 
                             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
                             {
-                                Array.Clear(this.HeapBitmapBuffers[heapIndex], 0, this.HeapBitmapBuffers[heapIndex].Length);
+                                Array.Clear(this.HeapViews[heapIndex].HeapBitmapBuffer, 0, this.HeapViews[heapIndex].HeapBitmapBuffer.Length);
                             }
 
-                            Byte[] heapStruct = MemoryReader.Instance.ReadBytes(
+                            Int32 heapStructSize = typeof(SFAHeap).StructLayoutAttribute.Size;
+                            Byte[] heapArrayRaw = MemoryReader.Instance.ReadBytes(
                                 SessionManager.Session.OpenedProcess,
                                 MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, HeapTableAddress, EmulatorType.Dolphin),
-                                HeapCount * HeapTableEntrySize,
+                                HeapCount * typeof(SFAHeap).StructLayoutAttribute.Size,
                                 out success);
 
                             if (!success)
@@ -148,32 +142,57 @@
                                 return;
                             }
 
+                            SFAHeap[] heaps = new SFAHeap[4];
+
                             for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
                             {
-                                Int32 baseIndex = heapIndex * HeapTableEntrySize;
-                                Int32 bytesPerPixel = this.HeapBitmaps[heapIndex].Format.BitsPerPixel / 8;
-                                Int32 heapSize = (Int32)(HeapAddresses[heapIndex + 1] - HeapAddresses[heapIndex]);
+                                Byte[] heapData = new Byte[heapStructSize];
+                                Array.Copy(heapArrayRaw, heapIndex * heapStructSize, heapData, 0, heapStructSize);
+                                heaps[heapIndex] = SFAHeap.FromByteArray(heapData);
+                            }
 
-                                UInt32 totalSize = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex));
-                                UInt32 usedSize = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 4));
-                                UInt32 totalBlocks = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 8));
-                                UInt32 usedBlocks = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 12));
-                                UInt32 blockBaseAddress = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(heapStruct, baseIndex + 16));
+                            for (Int32 heapIndex = 0; heapIndex < HeapCount; heapIndex++)
+                            {
+                                Int32 bytesPerPixel = this.HeapViews[heapIndex].HeapBitmap.Format.BitsPerPixel / 8;
+                                // UInt32 heapSize = heaps[heapIndex].totalSize == 0 ? (UInt32)(heaps[heapIndex + 1].heapPtr - heaps[heapIndex].heapPtr) : heaps[heapIndex].totalSize;
+                                UInt32 heapSize = HeapAddresses[heapIndex + 1] - HeapAddresses[heapIndex];
+
+                                this.HeapViews[heapIndex].HeapTotalSize = heaps[heapIndex].totalSize;
+                                this.HeapViews[heapIndex].HeapUsedSize = heaps[heapIndex].usedSize;
+                                this.HeapViews[heapIndex].HeapTotalBlocks = heaps[heapIndex].totalBlocks;
+                                this.HeapViews[heapIndex].HeapUsedBlocks = heaps[heapIndex].usedBlocks;
+                                this.HeapViews[heapIndex].HeapBaseAddress = heaps[heapIndex].heapPtr;
+                                this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapBaseAddress.ToString())));
+
+                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapTotalSize.ToString())));
+                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapUsedSize.ToString())));
+                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapTotalBlocks.ToString())));
+                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapUsedBlocks.ToString())));
 
                                 // Color the bike memory as flashing red. Will be overwritten if something is allocated there.
-                                if (mountPointer > HeapAddresses[heapIndex] && mountPointer < HeapAddresses[heapIndex + 1])
+                                if (mountPointer > heaps[heapIndex].heapPtr && mountPointer < heaps[heapIndex].heapPtr + heapSize)
                                 {
-                                    this.ColorBikeMemory(mountPointer, heapIndex, Color.FromRgb((Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0, 0));
+                                    this.ColorBikeMemory(heaps, mountPointer, heapIndex, Color.FromRgb((Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0, 0));
                                 }
 
-                                for (int blockIndex = 0; blockIndex < usedBlocks; blockIndex++)
-                                {
-                                    UInt32 nextBlockAddress = blockBaseAddress + (UInt32)(blockIndex * HeapBlockSize);
+                                Int32 heapEntrySize = typeof(SFAHeapEntry).StructLayoutAttribute.Size;
 
-                                    Byte[] blockStruct = MemoryReader.Instance.ReadBytes(
+                                if (!success)
+                                {
+                                    continue;
+                                }
+
+                                this.HeapViews[heapIndex].HeapMountBlockStart = 0;
+                                this.HeapViews[heapIndex].HeapMountBlockEnd = 0;
+                                this.HeapViews[heapIndex].HeapMountStatus = "";
+
+                                for (int blockIndex = 0; blockIndex < heaps[heapIndex].totalBlocks; blockIndex++)
+                                {
+                                    UInt32 nextBlockAddress = heaps[heapIndex].heapEntryPtr + (UInt32)(blockIndex * heapEntrySize);
+                                    Byte[] heapEntryDataRaw = MemoryReader.Instance.ReadBytes(
                                         SessionManager.Session.OpenedProcess,
                                         MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, nextBlockAddress, EmulatorType.Dolphin),
-                                        HeapBlockSize,
+                                        heapEntrySize,
                                         out success);
 
                                     if (!success)
@@ -181,68 +200,137 @@
                                         continue;
                                     }
 
-                                    UInt32 address = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(blockStruct, 0));
-                                    UInt32 size = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(blockStruct, 4));
-                                    UInt32 tag = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(blockStruct, 16));
-                                    UInt32 id = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(blockStruct, 24));
+                                    SFAHeapEntry heapEntry = SFAHeapEntry.FromByteArray(heapEntryDataRaw);
 
-                                    Int32 offset = (Int32)(address - HeapAddresses[heapIndex]);
+                                    Int32 offset = (Int32)(heapEntry.entryPtr - heaps[heapIndex].heapPtr);
 
-                                    if (offset < 0 || address > HeapAddresses[heapIndex + 1])
+                                    this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + heapEntry.entryPtr.ToString())));
+                                    this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + heapEntry.size.ToString())));
+                                    // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + tag.ToString())));
+                                    // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + id.ToString())));
+
+                                    if (offset < 0 || heapEntry.entryPtr > heaps[heapIndex].heapPtr + heapSize)
                                     {
-                                        throw new Exception("Address out of range!");
+                                        // throw new Exception("Address out of range!");
+                                        continue;
+                                    }
+
+                                    if (mountPointer >= heapEntry.entryPtr && mountPointer <= heapEntry.entryPtr + heapEntry.size)
+                                    {
+                                        this.HeapViews[heapIndex].HeapMountBlockStart = heapEntry.entryPtr;
+                                        this.HeapViews[heapIndex].HeapMountBlockEnd = heapEntry.entryPtr + heapEntry.size;
+                                        this.HeapViews[heapIndex].HeapMountStatus = heapEntry.entryType == SFAHeapEntryType.Free ? "AVAILABLE" : "OVERWRITTEN!";
                                     }
 
                                     Color color = Color.FromArgb(255, 0, 0, 0);
-                                    
-                                    switch(tag)
+
+                                    if (heapEntry.entryType == SFAHeapEntryType.Free)
                                     {
-                                        case 0x5: color = Colors.Cyan; break;       // Map blocks
-                                        case 0x6: color = Colors.Green; break;      // Texture
-                                        case 0x9: color = Colors.Yellow; break;     // Model data
-                                        case 0xA: color = Colors.Blue; break;       // Models
-                                        case 0xB: color = Colors.RoyalBlue; break;  // Audio?
-                                        case 0xE: color = Colors.Red; break;        // Objects
-                                        case 0x10: color = Colors.Teal; break;      // VOX
-                                        case 0x11: color = Colors.DarkViolet; break;    // Stack data type
-                                        case 0x17: color = Colors.Purple; break;        // Texture points
-                                        case 0x18: color = Colors.Magenta; break;       // Vec3 array
-                                        case 0x1A: color = Colors.LimeGreen; break;     // Model struct
-                                        case 0xFF: color = Colors.Gray; break;          // Byte buffer
-                                        case 0x7D7D7D7D: color = Colors.DarkGray; break;    // Data file
-                                        case 0x7F7F7F7F: color = Colors.LightGray; break;   // Compressed file
-                                        case 0x8002BE20: color = Colors.IndianRed; break;   // Object definition
-                                        case 0x8002D91C: color = Colors.DarkRed; break;     // Object instance
-                                        case 0xFFFF00FF: color = Colors.HotPink; break;     // Intersect point / savegame
-                                        default: color = Colors.Brown; break;
+                                        color = Colors.Gray;
+                                    }
+                                    else
+                                    {
+                                        switch (heapEntry.allocTag)
+                                        {
+                                            case SFAAllocTag.ZERO: color = Colors.LightSkyBlue; break;
+                                            case SFAAllocTag.LISTS_COL: color = Colors.Orange; break;
+                                            case SFAAllocTag.SCREEN_COL: color = Colors.DarkCyan; break;
+                                            case SFAAllocTag.CODE_COL: color = Colors.DarkGoldenrod; break;
+                                            case SFAAllocTag.DLL_COL: color = Colors.Blue; break;
+                                            case SFAAllocTag.TRACK_COL: color = Colors.DarkKhaki; break;
+                                            case SFAAllocTag.TEX_COL: color = Colors.DarkSeaGreen; break;
+                                            case SFAAllocTag.TRACKTEX_COL: color = Colors.DarkOliveGreen; break;
+                                            case SFAAllocTag.SPRITETEX_COL: color = Colors.Pink; break;
+                                            case SFAAllocTag.MODELS_COL: color = Colors.DarkSalmon; break;
+                                            case SFAAllocTag.ANIMS_COL: color = Colors.Red; break;
+                                            case SFAAllocTag.AUDIO_COL: color = Colors.RoyalBlue; break;
+                                            case SFAAllocTag.SEQ_COL: color = Colors.DarkSlateBlue; break;
+                                            case SFAAllocTag.SFX_COL: color = Colors.DarkSlateGray; break;
+                                            case SFAAllocTag.OBJECTS_COL: color = Colors.Green; break;
+                                            case SFAAllocTag.CAM_COL: color = Colors.DarkTurquoise; break;
+                                            case SFAAllocTag.VOX_COL: color = Colors.Teal; break;
+                                            case SFAAllocTag.ANIMSEQ_COL: color = Colors.DarkViolet; break;
+                                            case SFAAllocTag.LFX_COL: color = Colors.LightBlue; break;
+                                            case SFAAllocTag.GFX_CO: color = Colors.LightCoral; break;
+                                            case SFAAllocTag.EXPGFX_COL: color = Colors.LightCyan; break;
+                                            case SFAAllocTag.MODGFX_COL: color = Colors.LightGoldenrodYellow; break;
+                                            case SFAAllocTag.PROJGFX_COL: color = Colors.LightGreen; break;
+                                            case SFAAllocTag.SKY_COL: color = Colors.LightPink; break;
+                                            case SFAAllocTag.SHAD_COL: color = Colors.LightSalmon; break;
+                                            case SFAAllocTag.GAME_COL: color = Colors.LightSeaGreen; break;
+                                            case SFAAllocTag.TEST_COL: color = Colors.LimeGreen; break;
+                                            case SFAAllocTag.BLACK: color = Colors.Black; break;
+                                            case SFAAllocTag.RED: color = Colors.DarkRed; break;
+                                            case SFAAllocTag.GREEN: color = Colors.DarkGreen; break;
+                                            case SFAAllocTag.BLUE: color = Colors.DarkBlue; break;
+                                            case SFAAllocTag.CYAN: color = Colors.Cyan; break;
+                                            case SFAAllocTag.MAGENTA: color = Colors.Magenta; break;
+                                            case SFAAllocTag.YELLOW: color = Colors.Yellow; break;
+                                            case SFAAllocTag.WHITE: color = Colors.White; break;
+                                            case SFAAllocTag.GREY: color = Colors.DarkGray; break;
+                                            case SFAAllocTag.ORANGE: color = Colors.DarkOrange; break;
+                                            case SFAAllocTag.OBJECTS: color = Colors.DarkMagenta; break;
+                                            case SFAAllocTag.VOX: color = Colors.LightSlateGray; break;
+                                            case SFAAllocTag.ANIMS: color = Colors.LightSteelBlue; break;
+                                            case SFAAllocTag.TRACK: color = Colors.LightYellow; break;
+                                            case SFAAllocTag.MODELS: color = Colors.Lime; break;
+                                            case SFAAllocTag.GAME: color = Colors.LimeGreen; break;
+                                            case SFAAllocTag.ANIMSEQ: color = Colors.AliceBlue; break;
+                                            case SFAAllocTag.FILE: color = Colors.BlanchedAlmond; break;
+                                            case SFAAllocTag.CODE: color = Colors.IndianRed; break;
+                                            case SFAAllocTag.SHAD: color = Colors.Aqua; break;
+                                            case SFAAllocTag.COMPRESSED_FILE: color = Colors.AntiqueWhite; break;
+                                            case SFAAllocTag.CAM: color = Colors.Azure; break;
+                                            case SFAAllocTag.DLL: color = Colors.SandyBrown; break;
+                                            case SFAAllocTag.LISTS: color = Colors.SeaGreen; break;
+                                            case SFAAllocTag.SFX: color = Colors.SeaShell; break;
+                                            case SFAAllocTag.SEQ: color = Colors.Chocolate; break;
+                                            case SFAAllocTag.AUDIO: color = Colors.SaddleBrown; break;
+                                            case SFAAllocTag.SPRITETEX: color = Colors.MediumAquamarine; break;
+                                            case SFAAllocTag.TRACKTEX: color = Colors.MediumBlue; break;
+                                            case SFAAllocTag.TEX: color = Colors.MediumOrchid; break;
+                                            case SFAAllocTag.SCREEN: color = Colors.MediumPurple; break;
+                                            case SFAAllocTag.FACEFEED: color = Colors.MediumSeaGreen; break;
+                                            case SFAAllocTag.SKY: color = Colors.MediumSlateBlue; break;
+                                            case SFAAllocTag.PROJGFX: color = Colors.MediumSpringGreen; break;
+                                            case SFAAllocTag.MODGFX: color = Colors.MediumTurquoise; break;
+                                            case SFAAllocTag.EXPGFX: color = Colors.MediumVioletRed; break;
+                                            case SFAAllocTag.GFX: color = Colors.Olive; break;
+                                            case SFAAllocTag.LFX: color = Colors.OliveDrab; break;
+                                            case SFAAllocTag.TEST: color = Colors.PeachPuff; break;
+                                            case SFAAllocTag.INTERSECT_POINT: color = Colors.CornflowerBlue; break;
+                                            case SFAAllocTag.SAVEGAME: color = Colors.HotPink; break;
+                                            default: color = Colors.Brown; break;
+                                        }
                                     }
 
                                     Int32 pixelStart = (Int32)((double)offset * (double)HeapImageWidth / (double)heapSize);
-                                    Int32 pixelEnd = (Int32)((double)(offset + size) * (double)HeapImageWidth / (double)heapSize);
+                                    Int32 pixelEnd = (Int32)((double)(offset + heapEntry.size) * (double)HeapImageWidth / (double)heapSize);
 
                                     for (Int32 pixelIndex = pixelStart; pixelIndex < pixelEnd; pixelIndex++)
                                     {
                                         if (pixelIndex >= HeapImageWidth)
                                         {
-                                            throw new Exception("Address out of bitmap range!");
+                                            // throw new Exception("Address out of bitmap range!");
+                                            break;
                                         }
 
-                                        this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] = color.B;
-                                        this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] = color.G;
-                                        this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] = color.R;
+                                        this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel] = color.B;
+                                        this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel + 1] = color.G;
+                                        this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel + 2] = color.R;
                                     }
 
                                     // Recolor the memory as flashing green if it is being overlapped
-                                    if (address <= (mountPointer + BikeSize) && mountPointer <= (address + size))
+                                    if (heapEntry.entryPtr <= (mountPointer + BikeSize) && mountPointer <= (heapEntry.entryPtr + heapEntry.size))
                                     {
-                                        this.ColorBikeMemory(mountPointer, heapIndex, Color.FromRgb(0, (Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0));
+                                        this.ColorBikeMemory(heaps, mountPointer, heapIndex, Color.FromRgb(0, (Byte)(DateTime.Now.Ticks % Byte.MaxValue), 0));
                                     }
                                 }
 
-                                this.HeapBitmaps[heapIndex].WritePixels(
+                                this.HeapViews[heapIndex].HeapBitmap.WritePixels(
                                     new Int32Rect(0, 0, HeapImageWidth, HeapImageHeight),
-                                    this.HeapBitmapBuffers[heapIndex],
-                                    this.HeapBitmaps[heapIndex].PixelWidth * bytesPerPixel,
+                                    this.HeapViews[heapIndex].HeapBitmapBuffer,
+                                    this.HeapViews[heapIndex].HeapBitmap.PixelWidth * bytesPerPixel,
                                     0
                                 );
                             }
@@ -258,25 +346,26 @@
             });
         }
 
-        private void ColorBikeMemory(UInt32 mountPointer, Int32 heapIndex, Color color)
+        private void ColorBikeMemory(SFAHeap[] heaps, UInt32 mountPointer, Int32 heapIndex, Color color)
         {
-            Int32 heapSize = (Int32)(HeapAddresses[heapIndex + 1] - HeapAddresses[heapIndex]);
-            Int32 bytesPerPixel = this.HeapBitmaps[heapIndex].Format.BitsPerPixel / 8;
+            UInt32 heapSize = heaps[heapIndex].totalSize == 0 ? (UInt32)(heaps[heapIndex + 1].heapPtr - heaps[heapIndex].heapPtr) : heaps[heapIndex].totalSize;
+            Int32 bytesPerPixel = this.HeapViews[heapIndex].HeapBitmap.Format.BitsPerPixel / 8;
 
-            Int32 bikeOffset = (Int32)(mountPointer - HeapAddresses[heapIndex]);
+            Int32 bikeOffset = (Int32)(mountPointer - heaps[heapIndex].heapPtr);
             Int32 bikeStart = (Int32)((double)bikeOffset * (double)HeapImageWidth / (double)heapSize);
             Int32 bikeEnd = (Int32)((double)(bikeOffset + BikeSize) * (double)HeapImageWidth / (double)heapSize);
 
             for (Int32 pixelIndex = bikeStart; pixelIndex < bikeEnd; pixelIndex++)
             {
-                if (pixelIndex >= HeapImageWidth)
+                if (pixelIndex < 0 || pixelIndex >= HeapImageWidth)
                 {
-                    throw new Exception("Address out of bitmap range!");
+                    // throw new Exception("Address out of bitmap range!");
+                    continue;
                 }
 
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel] = color.B;
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 1] = color.G;
-                this.HeapBitmapBuffers[heapIndex][pixelIndex * bytesPerPixel + 2] = color.R;
+                this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel] = color.B;
+                this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel + 1] = color.G;
+                this.HeapViews[heapIndex].HeapBitmapBuffer[pixelIndex * bytesPerPixel + 2] = color.R;
             }
         }
     }

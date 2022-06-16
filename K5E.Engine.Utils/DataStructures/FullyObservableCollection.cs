@@ -5,7 +5,6 @@
     using System.Collections.ObjectModel;
     using System.Collections.Specialized;
     using System.ComponentModel;
-    using System.Linq;
 
     /// <summary>
     /// A collection of items for which property change events are observed. Fixes the poor .NET platform ObservableCollection implementation.

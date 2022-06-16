@@ -31,7 +31,7 @@
 
             Application.Current.Exit += this.OnAppExit;
 
-            this.RunUpdateLoop();
+            // this.RunUpdateLoop();
         }
 
         private void OnAppExit(object sender, ExitEventArgs e)
