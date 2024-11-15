@@ -8,7 +8,7 @@ The code for this visualizer is ported from two projects:
 1) [RenaKunisaki's script](https://github.com/RenaKunisaki/StarFoxAdventures/blob/master/misc-scripts/identifyPointer.py) - For the heap parsing logic
 2) [Squalr](https://github.com/Squalr/Squalr/) - For the memory scanning libraries and window docking
 
-Changes in K5E/Source/HeapVisualizer/HeapVisualizerViewModel.cs to allow other applications to access the heap values, frame count and other data.
+Changes in K5E/Source/HeapVisualizer/HeapVisualizerViewModel.cs to allow other applications to access the heap values, frame count and other data. To be used with https://github.com/Goal3-14/SFA-Memory-Map.
 
 ![SqualrGUI](Documentation/K5E.png)
 
