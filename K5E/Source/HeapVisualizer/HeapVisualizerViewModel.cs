@@ -14,11 +14,29 @@
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
 
+
+    using System.Diagnostics;
+
+
+
+    //Shared Memory stuff
+    using System.IO.MemoryMappedFiles;
+    using System.Text;
+    using System.Threading;
+    using System.IO;
+
     /// <summary>
     /// View model for the Heap Visualizer.
     /// </summary>
     public class HeapVisualizerViewModel : ToolViewModel
     {
+
+        const string mapName = "MySharedMemory";
+        const string FmapName = "FrameMemory";
+        const int size = 32; // Size for a 32-digit number (or 34 with null terminator)
+        const int Fsize = 8;
+
+
         static readonly List<UInt32> HeapAddresses = new List<UInt32> { 0x80526020, 0x8112FF80, 0x812EFFA0, 0x8138E1E0, 0x81800000 /* End address */ };
         static readonly Int32 HeapCount = 4;
         static readonly UInt32 HeapTableAddress = 0x80340698;
@@ -30,6 +48,8 @@
         static readonly Int32 HeapImageWidth = 4096;
         static readonly Int32 HeapImageHeight = 1;
         static readonly Int32 DPI = 72;
+        
+
 
         /// <summary>
         /// Singleton instance of the <see cref="HeapVisualizerViewModel" /> class.
@@ -95,6 +115,8 @@
         /// </summary>
         private void RunUpdateLoop()
         {
+            string CurrentMem = "X";
+            string MemText = "X";
             this.CanUpdate = true;
 
             Task.Run(async () =>
@@ -164,11 +186,6 @@
                                 this.HeapViews[heapIndex].HeapBaseAddress = heaps[heapIndex].heapPtr;
                                 this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapBaseAddress.ToString())));
 
-                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapTotalSize.ToString())));
-                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapUsedSize.ToString())));
-                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapTotalBlocks.ToString())));
-                                // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + this.HeapViews[heapIndex].HeapUsedBlocks.ToString())));
-
                                 // Color the bike memory as flashing red. Will be overwritten if something is allocated there.
                                 if (mountPointer > heaps[heapIndex].heapPtr && mountPointer < heaps[heapIndex].heapPtr + heapSize)
                                 {
@@ -206,8 +223,135 @@
 
                                     this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + heapEntry.entryPtr.ToString())));
                                     this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + heapEntry.size.ToString())));
-                                    // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + tag.ToString())));
-                                    // this.HeapViews[heapIndex].HeapHash = Convert.ToHexString(md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(this.HeapViews[heapIndex].HeapHash + id.ToString())));
+
+
+
+
+
+
+
+
+                                    
+
+                                    
+
+
+                                    //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+                                    try
+                                    {   
+
+                                        if (this.HeapViews != null && this.HeapViews.Count > 1 && this.HeapViews[1] != null)
+                                        {
+                                            if (this.HeapViews[1].HeapHash != null) {
+
+
+                                                string IncMem = this.HeapViews[1].HeapHash?.ToString();
+                                                if (CurrentMem == IncMem)
+                                                {
+                                                    MemText = IncMem;
+
+                                                }
+                                                
+
+                                                CurrentMem = IncMem;
+
+                                            }
+                                            
+
+                                        }
+                                        else
+                                        {
+                                            
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        
+                                    }
+
+
+                                    
+
+                                    
+                                    if (MemText != "X")
+                                    {
+
+                                        MemoryMappedFile mmf;
+
+                                        try
+                                        {
+                                            mmf = MemoryMappedFile.OpenExisting(mapName);
+                                        }
+                                        catch (IOException)
+                                        {
+                                            mmf = MemoryMappedFile.CreateNew(mapName, size);
+                                        }
+
+                                        using (var accessor = mmf.CreateViewAccessor())
+                                        {
+
+                                            //string str = "95C99029EE2F5684DADC658F79FF51BA".PadRight(size, '\0');
+
+                                            byte[] strBytes = Encoding.UTF8.GetBytes(MemText);
+                                            accessor.WriteArray(0, strBytes, 0, strBytes.Length);
+
+                                        }
+
+
+
+
+                                    }
+
+
+
+
+                                    string frame = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803DCB1C, EmulatorType.Dolphin),
+                                        out success)).ToString().PadLeft(8, '0');
+                                    
+
+
+
+                                    MemoryMappedFile mmfFrame;
+
+                                    try
+                                    {
+                                        mmfFrame = MemoryMappedFile.OpenExisting(FmapName);
+                                    }
+                                    catch (IOException)
+                                    {
+                                        mmfFrame = MemoryMappedFile.CreateNew(FmapName, Fsize);
+                                    }
+
+                                    using (var accessor = mmfFrame.CreateViewAccessor())
+                                    {
+
+                                        
+
+                                        byte[] strBytes = Encoding.UTF8.GetBytes(frame);
+                                        accessor.WriteArray(0, strBytes, 0, strBytes.Length);
+
+                                    }
+
+
+
+
+
+
+
+
+
+
+                                    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 
                                     if (offset < 0 || heapEntry.entryPtr > heaps[heapIndex].heapPtr + heapSize)
                                     {
