@@ -24,6 +24,7 @@
     using System.Text;
     using System.Threading;
     using System.IO;
+    using System.Collections;
 
     /// <summary>
     /// View model for the Heap Visualizer.
@@ -33,23 +34,40 @@
 
         const string mapName = "MySharedMemory";
         const string FmapName = "FrameMemory";
+        const string FoxName = "FoxMemory";
+        const string BikeEswName = "BikeESWMemory";
+
         const int size = 32; // Size for a 32-digit number (or 34 with null terminator)
         const int Fsize = 8;
-
+        UInt32 BufferPointer;
+        int Cycle = 0;
 
         static readonly List<UInt32> HeapAddresses = new List<UInt32> { 0x80526020, 0x8112FF80, 0x812EFFA0, 0x8138E1E0, 0x81800000 /* End address */ };
         static readonly Int32 HeapCount = 4;
         static readonly UInt32 HeapTableAddress = 0x80340698;
 
+        static readonly UInt32 FoxPointerAddress = 0x803428F8;
+        static readonly UInt32 FoxXOffset = 0xC;
+        static readonly UInt32 FoxYOffset = 0x10;
+        static readonly UInt32 FoxZOffset = 0x14;
+
         static readonly UInt32 MountPointerAddress = 0x803428F8;
         static readonly UInt32 MountOffset = 0x908;
+        static readonly UInt32 BikeXOffset = 0x18;
+        static readonly UInt32 BikeYOffset = 0x1C;
+        static readonly UInt32 BikeZOffset = 0x20;
         static readonly Int32 BikeSize = 3104;
+
+        static readonly UInt32 ESWPointerAddress = 0x803DD49C;
+        static readonly UInt32 ESWXOffset = 0x694;
+        static readonly UInt32 ESWYOffset = 0x698;
+        static readonly UInt32 ESWZOffset = 0x69C;
 
         static readonly Int32 HeapImageWidth = 4096;
         static readonly Int32 HeapImageHeight = 1;
         static readonly Int32 DPI = 72;
-        
 
+        UInt32 Buffer;
 
         /// <summary>
         /// Singleton instance of the <see cref="HeapVisualizerViewModel" /> class.
@@ -144,6 +162,7 @@
                                 if (success)
                                 {
                                     mountPointer = BinaryPrimitives.ReverseEndianness(mountPointer);
+
                                 }
                             }
 
@@ -231,21 +250,22 @@
 
 
 
-                                    
 
-                                    
+
+
 
 
                                     //////////////////////////////////////////////////////////////////////////////////////////////////////
+                                    //////////////
 
-
-
+                                    // Get Mem Values
                                     try
-                                    {   
+                                    {
 
                                         if (this.HeapViews != null && this.HeapViews.Count > 1 && this.HeapViews[1] != null)
                                         {
-                                            if (this.HeapViews[1].HeapHash != null) {
+                                            if (this.HeapViews[1].HeapHash != null)
+                                            {
 
 
                                                 string IncMem = this.HeapViews[1].HeapHash?.ToString();
@@ -254,28 +274,28 @@
                                                     MemText = IncMem;
 
                                                 }
-                                                
+
 
                                                 CurrentMem = IncMem;
 
                                             }
-                                            
+
 
                                         }
                                         else
                                         {
-                                            
+
                                         }
                                     }
                                     catch (Exception ex)
                                     {
-                                        
+
                                     }
 
 
-                                    
 
-                                    
+
+                                    // Send Mem
                                     if (MemText != "X")
                                     {
 
@@ -307,15 +327,15 @@
 
 
 
-
+                                    // Get Frame
                                     string frame = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<UInt32>(
                                         SessionManager.Session.OpenedProcess,
                                         MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, 0x803DCB1C, EmulatorType.Dolphin),
                                         out success)).ToString().PadLeft(8, '0');
-                                    
 
 
 
+                                    // Send Frame
                                     MemoryMappedFile mmfFrame;
 
                                     try
@@ -330,7 +350,7 @@
                                     using (var accessor = mmfFrame.CreateViewAccessor())
                                     {
 
-                                        
+
 
                                         byte[] strBytes = Encoding.UTF8.GetBytes(frame);
                                         accessor.WriteArray(0, strBytes, 0, strBytes.Length);
@@ -346,6 +366,7 @@
 
 
 
+                                    ///////////////////
                                     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -471,6 +492,17 @@
                                     }
                                 }
 
+
+
+
+                                
+
+
+
+
+
+
+
                                 this.HeapViews[heapIndex].HeapBitmap.WritePixels(
                                     new Int32Rect(0, 0, HeapImageWidth, HeapImageHeight),
                                     this.HeapViews[heapIndex].HeapBitmapBuffer,
@@ -478,6 +510,161 @@
                                     0
                                 );
                             }
+
+
+                            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            ////////////////
+                            Cycle++;
+                            //Fox
+                            if (Cycle % 2 == 0)
+                            {
+                                UInt32 MainPointer = MemoryReader.Instance.Read<UInt32>(
+                                SessionManager.Session.OpenedProcess,
+                                MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, FoxPointerAddress, EmulatorType.Dolphin),
+                                out success);
+
+                                // X
+                                BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + FoxXOffset;
+                                string foxX = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                    out success)).ToString();//.PadLeft(8, '0');
+                                                             //Debug.WriteLine(foxX);
+                                                             //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(foxX)), 0));
+
+                                // Y
+                                BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + FoxYOffset;
+                                string foxY = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                    out success)).ToString();//.PadLeft(8, '0');
+                                                             //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(foxY)), 0));
+
+                                // Z
+                                BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + FoxZOffset;
+                                string foxZ = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                    out success)).ToString();//.PadLeft(8, '0');
+                                                             //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(foxZ)), 0));
+
+                                string FoxCoords = foxX +" "+ foxY +" "+ foxZ;
+
+                                MemoryMappedFile mmfFox;
+
+                                try
+                                {
+                                    mmfFox = MemoryMappedFile.OpenExisting(FoxName);
+                                }
+                                catch (IOException)
+                                {
+                                    mmfFox = MemoryMappedFile.CreateNew(FoxName, 35);
+                                }
+
+                                using (var accessor = mmfFox.CreateViewAccessor())
+                                {
+                                    byte[] strBytes = Encoding.UTF8.GetBytes(FoxCoords);
+                                    accessor.WriteArray(0, strBytes, 0, strBytes.Length);
+
+                                }
+
+                                //Bike
+
+                                if (Cycle >= 6)
+                                {
+
+
+                                    MainPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + MountOffset;
+                                    MainPointer = MemoryReader.Instance.Read<UInt32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, MainPointer, EmulatorType.Dolphin),
+                                    out success);
+
+
+                                    // X
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + BikeXOffset;
+                                    string BikeX = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(BikeX)), 0));
+
+                                    // Y
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + BikeYOffset;
+                                    string BikeY = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(BikeY)), 0));
+
+                                    // Z
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + BikeZOffset;
+                                    string BikeZ = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(BikeZ)), 0));
+                                    //Debug.WriteLine("");
+                                    Cycle = 0;
+
+                                    
+
+                                    //ESW
+
+                                    MainPointer = MemoryReader.Instance.Read<UInt32>(
+                                    SessionManager.Session.OpenedProcess,
+                                    MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, ESWPointerAddress, EmulatorType.Dolphin),
+                                    out success);
+
+                                    // X
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + ESWXOffset;
+                                    string ESWX = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(ESWX)), 0));
+
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + ESWYOffset;
+                                    string ESWY = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(ESWY)), 0));
+
+                                    BufferPointer = BinaryPrimitives.ReverseEndianness(MainPointer) + ESWZOffset;
+                                    string ESWZ = BinaryPrimitives.ReverseEndianness(MemoryReader.Instance.Read<Int32>(
+                                        SessionManager.Session.OpenedProcess,
+                                        MemoryQueryer.Instance.EmulatorAddressToRealAddress(SessionManager.Session.OpenedProcess, BufferPointer, EmulatorType.Dolphin),
+                                        out success)).ToString();
+                                    //Debug.WriteLine(BitConverter.ToSingle(BitConverter.GetBytes(Convert.ToInt32(ESWZ)), 0));
+
+                                    string BikeESW = BikeX + " " + BikeY + " " + BikeZ +" "+ ESWX+" "+ESWY+" "+ESWZ; //70
+
+                                    MemoryMappedFile mmfBikeESW;
+
+                                    try
+                                    {
+                                        mmfBikeESW = MemoryMappedFile.OpenExisting(BikeEswName);
+                                    }
+                                    catch (IOException)
+                                    {
+                                        mmfBikeESW = MemoryMappedFile.CreateNew(BikeEswName, 70);
+                                    }
+
+                                    using (var accessor = mmfBikeESW.CreateViewAccessor())
+                                    {
+                                        byte[] strBytes = Encoding.UTF8.GetBytes(BikeESW);
+                                        accessor.WriteArray(0, strBytes, 0, strBytes.Length);
+
+                                    }
+                                }
+
+                                
+                                /////////////////
+                                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            }
+                            
+
                         });
                     }
                     catch(Exception ex)
